@@ -30,6 +30,8 @@ from core.summarizer import summarize, generate_title
 from core.extractor import extract_action_items, extract_key_decisions, extract_questions
 from core.rag_engine import create_session, ask_question
 from core.document_reader import extract_text
+import static_ffmpeg
+static_ffmpeg.add_paths()
 
 STORAGE_ROOT = os.getenv("DOWNLOAD_DIR", "storage/downloads")
 os.makedirs(STORAGE_ROOT, exist_ok=True)
