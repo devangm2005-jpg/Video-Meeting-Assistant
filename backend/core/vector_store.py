@@ -7,7 +7,8 @@ own Chroma collection so different users/jobs never mix context.
 
 import os
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+# FIXED: Swapped local embeddings for the free Cloud API endpoint version
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
@@ -22,7 +23,11 @@ _embeddings = None
 def get_embeddings():
     global _embeddings
     if _embeddings is None:
-        _embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+        # FIXED: This calls Hugging Face's servers using your token. 0MB RAM used locally.
+        _embeddings = HuggingFaceEndpointEmbeddings(
+            model=EMBEDDING_MODEL,
+            huggingfacehub_api_token=os.getenv("HF_TOKEN")
+        )
     return _embeddings
 
 

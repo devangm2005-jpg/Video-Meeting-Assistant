@@ -306,4 +306,5 @@ async def rag_ask(body: AskRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)), reload=True)
+    # Changed reload to False for production stability
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
