@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: meeting-assistant-api
+    runtime: docker
+    plan: standard
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: FRONTEND_ORIGIN
+        value: "*"
+      - key: WHISPER_MODEL
+        value: small
+      - key: PORT
+        value: 8000
+    healthCheckPath: /api/health
+    disk:
+      name: meeting-assistant-storage
+      mountPath: /app/storage
+      sizeGB: 5

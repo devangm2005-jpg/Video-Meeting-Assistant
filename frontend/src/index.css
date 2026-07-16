@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background-color: #0f1216;
+  }
+  body {
+    @apply bg-ink text-paper font-body antialiased;
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(255, 90, 54, 0.06), transparent 40%),
+      radial-gradient(circle at 100% 20%, rgba(55, 214, 167, 0.05), transparent 45%);
+  }
+  ::selection {
+    background: rgba(255, 90, 54, 0.35);
+  }
+  *:focus-visible {
+    outline: 2px solid #ff8a5b;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply font-display text-sm tracking-widest2 uppercase text-rec2;
+  }
+  .card {
+    @apply bg-panel border border-line rounded-xl;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-rec px-4 py-2.5
+      font-semibold text-ink hover:bg-rec2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-panel2 px-4 py-2.5
+      font-medium text-fog hover:border-rec/60 hover:text-paper transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .input-field {
+    @apply w-full rounded-lg border border-line bg-ink px-3.5 py-2.5 text-paper placeholder:text-muted
+      focus:border-rec2 outline-none transition-colors;
+  }
+  .tab-btn {
+    @apply px-3.5 py-2 rounded-md text-sm font-medium text-muted hover:text-paper transition-colors;
+  }
+  .tab-btn.active {
+    @apply bg-panel2 text-paper;
+  }
+}
+
+/* Custom scrollbars to match the studio aesthetic */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2b303b;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4152;
+}
