@@ -4,10 +4,11 @@ pydub>=0.25.1                # Audio file manipulation / format conversion
 ffmpeg-python>=0.2.0         # FFmpeg bindings (FFmpeg binary must be installed)
 
 # Speech-to-Text (local whisper)
-openai-whisper>=20231117     # OpenAI Whisper (runs locally)
-torch>=2.2.0                 # PyTorch backend for Whisper
-torchaudio>=2.2.0            # Audio utilities for PyTorch
-faster-whisper
+# openai-whisper>=20231117     # OpenAI Whisper (runs locally)
+# torch>=2.2.0                 # PyTorch backend for Whisper
+# torchaudio>=2.2.0            # Audio utilities for PyTorch
+# faster-whisper
+groq>=1.5.0
 
 # Translation (Hindi -> English)
 deep-translator>=1.11.4      # Lightweight translation wrapper (Google backend)

@@ -3,37 +3,40 @@ Speech-to-text engine.
 
 Routes each audio chunk to one of two backends depending on the requested
 language mode:
-- "english"  -> local Whisper model
+- "english"  -> Groq Whisper API (Free, fast, cloud-based)
 - "hinglish" -> Sarvam AI speech-to-text-translate API (translates to English
                 while transcribing, useful for Hindi/Hinglish meetings)
 """
 
 import os
-from faster_whisper import WhisperModel
+import time
 import requests
+from groq import Groq
 from pydub import AudioSegment
 
-WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
+# --- Configuration ---
+# Groq is used for "english" mode to save local RAM
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = "whisper-large-v3"  # Free tier model
 
-_model = None
-
+# Sarvam is used for "hinglish" mode
 SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
-SARVAM_STT_TRANSLATE_URL = "https://api.sarvam.ai/speech-to-text-translate"
+SARVAM_STT_TRANSLATE_URL = "https://sarvam.ai"
 SARVAM_MODEL = os.getenv("SARVAM_STT_MODEL", "saaras:v2.5")
 SARVAM_PIECE_SECONDS = 25
 
-
-def load_model():
-    global _model
-    if _model is None:
-        print(f"Loading Whisper model: {WHISPER_MODEL}...")
-        _model = WhisperModel(WHISPER_MODEL, device="cpu", compute_type="int8")
-        print("Whisper model loaded successfully")
-    return _model
+# Initialize Groq Client
+# Ensure GROQ_API_KEY is set in your .env or Render environment
+client = None
+if GROQ_API_KEY:
+    client = Groq(api_key=GROQ_API_KEY)
 
 
 def _send_to_sarvam(piece_path: str) -> str:
     """Send one <=30s WAV file to Sarvam and return the English transcript."""
+    if not SARVAM_API_KEY:
+         raise RuntimeError("SARVAM_API_KEY is missing")
+         
     headers = {"api-subscription-key": SARVAM_API_KEY}
 
     with open(piece_path, "rb") as f:
@@ -53,11 +56,27 @@ def _send_to_sarvam(piece_path: str) -> str:
     return response.json().get("transcript", "")
 
 
-def transcribe_chunk_whisper(chunk_path: str) -> str:
-    model = load_model()
-    # The new engine returns a generator; we join the segments together
-    segments, info = model.transcribe(chunk_path, beam_size=5)
-    return " ".join([segment.text for segment in segments])
+def transcribe_chunk_groq(chunk_path: str) -> str:
+    """
+    Sends audio chunk to Groq's Whisper API.
+    Includes a sleep timer to respect the Free Tier rate limit (20 requests/min).
+    """
+    if not client:
+        raise RuntimeError("GROQ_API_KEY is not set. Cannot use Groq for transcription.")
+
+    with open(chunk_path, "rb") as file:
+        transcription = client.audio.transcriptions.create(
+            file=(os.path.basename(chunk_path), file.read()),
+            model=GROQ_MODEL,
+            response_format="json",  # Returns a JSON object with a 'text' field
+            language="en"
+        )
+    
+    # GROQ FREE TIER LIMIT: 20 requests per minute.
+    # We sleep for 4 seconds to ensure we never exceed ~15 requests/min.
+    time.sleep(4) 
+    
+    return transcription.text
 
 
 def transcribe_chunk_sarvam(chunk_path: str) -> str:
@@ -65,9 +84,6 @@ def transcribe_chunk_sarvam(chunk_path: str) -> str:
     Sarvam's sync API only accepts <=30s audio. We split this chunk into
     25-second pieces, send each separately, and join the transcripts.
     """
-    if not SARVAM_API_KEY:
-        raise RuntimeError("SARVAM_API_KEY is not set in environment/.env")
-
     audio = AudioSegment.from_wav(chunk_path)
     piece_ms = SARVAM_PIECE_SECONDS * 1000
 
@@ -86,10 +102,11 @@ def transcribe_chunk_sarvam(chunk_path: str) -> str:
 
 
 def transcribe_chunk(chunk_path: str, language: str = "english") -> str:
-    """Route one chunk to Whisper or Sarvam depending on language choice."""
+    """Route one chunk to Groq or Sarvam depending on language choice."""
     if language.lower() == "hinglish":
         return transcribe_chunk_sarvam(chunk_path)
-    return transcribe_chunk_whisper(chunk_path)
+    # Default to Groq for English
+    return transcribe_chunk_groq(chunk_path)
 
 
 def transcribe_all(chunks: list, language: str = "english", on_progress=None) -> str:
