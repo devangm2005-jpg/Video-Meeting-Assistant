@@ -46,4 +46,4 @@ tqdm>=4.66.0                 # Progress bars
 requests>=2.32.0 
 
 
-
+nodeenv

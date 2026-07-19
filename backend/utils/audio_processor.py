@@ -29,17 +29,22 @@ def download_youtube_audio(url: str, job_dir: str) -> str:
 
     ydl_opts = {
         "format": "bestaudio/best",
-        'remote_components': 'ejs:github',  # Automatically downloads the missing challenge solver scripts
-        'js_runtime': 'node',                # Explicitly instructs yt-dlp to use your Node.js engine
+        "remote_components": "ejs:github",  # Downloads challenge solver scripts
+        "js_runtime": "node",                # Uses nodeenv engine installed in Render build
         "outtmpl": output_path,
         "http_headers": {
+            # FIX: Use an iOS user agent to match the player_client below
             "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) "
+                "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
             ),
         },
         "extractor_args": {
-            "youtube": {"player_client": ["android","web"]},
+            # FIX: Route through ios client app endpoints to bypass rigid web blocks
+            "youtube": {
+                "player_client": ["ios"],
+                "skip": ["webpage", "configs"]
+            },
         },
         "postprocessors": [
             {
@@ -61,7 +66,6 @@ def download_youtube_audio(url: str, job_dir: str) -> str:
 
     wav_path = os.path.join(job_dir, "source.wav")
     if not os.path.exists(wav_path):
-        # yt-dlp names the post-processed file after the outtmpl id token
         candidate = os.path.join(job_dir, f"{video_id}.wav")
         if os.path.exists(candidate):
             os.rename(candidate, wav_path)
