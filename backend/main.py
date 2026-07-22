@@ -39,13 +39,31 @@ MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "500"))
 
 app = FastAPI(title="Meeting Assistant API", version="1.0.0")
 
-origins = os.getenv("FRONTEND_ORIGIN", "*")
+# Clear CORS policy explicitly allowing your Vercel frontend and localhost
+origins = [
+    "https://video-and-meeting-assistant.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000"
+]
+
+# Read from env if it exists, otherwise use our safe defaults
+env_origins = os.getenv("FRONTEND_ORIGIN")
+if env_origins:
+    if env_origins == "*":
+        origins = ["*"]
+    else:
+        # Split commas and clean white spaces
+        origins.extend([o.strip() for o in env_origins.split(",") if o.strip()])
+
+# CORS credentials cannot be True when allow_origins contains "*"
+allow_credentials = origins != ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in origins.split(",")] if origins != "*" else ["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=origins,
+    allow_credentials=allow_credentials,
+    allow_methods=["*"],  # Allows GET, POST, OPTIONS, etc.
+    allow_headers=["*"],  # Allows Content-Type, Authorization, etc.
 )
 
 
@@ -60,6 +78,17 @@ def _error(e: Exception):
     traceback.print_exc()
     raise HTTPException(status_code=500, detail=str(e))
 
+# ---------------------------------------------------------------------------
+# 0. Root Endpoint (FIXES THE 404 ERROR ON RENDER)
+# ---------------------------------------------------------------------------
+
+@app.get("/")
+def read_root():
+    return {
+        "status": "online",
+        "message": "Welcome to the Video Meeting Assistant API 🎉",
+        "documentation": "/docs"
+    }
 
 # ---------------------------------------------------------------------------
 # Health
